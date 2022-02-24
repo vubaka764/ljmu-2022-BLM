@@ -36,6 +36,14 @@ void readFile() {
   SD.end();
 }
 
+void printLine(String heading, String value) {
+  tft.setTextColor(TFT_GREEN, TFT_BLACK);
+  tft.setCursor(5, 5);
+  tft.print(heading + ":");
+  tft.setTextColor(TFT_MAGENTA);
+  tft.println(value);
+}
+
 void printOnScreen(String temperature, String humidity) {
   // Wrap text at right and bottom of screen and set text size
   tft.setTextWrap(true, true);
@@ -44,14 +52,6 @@ void printOnScreen(String temperature, String humidity) {
   // Print Temperature and humidity
   printLine("Temp", temperature);
   printLine("Humidity", humidity);
-}
-
-void printLine(String heading, String value) {
-  tft.setTextColor(TFT_GREEN, TFT_BLACK);
-  tft.setCursor(5, 5);
-  tft.print(heading + ":");
-  tft.setTextColor(TFT_MAGENTA);
-  tft.println(value);
 }
 
 // -------------------------------------------------------------------------
