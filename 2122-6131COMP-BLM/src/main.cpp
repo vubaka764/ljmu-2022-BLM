@@ -10,12 +10,6 @@ String fileName = "/arduino.txt";
 
 TFT_eSPI    tft = TFT_eSPI();         // Create object "tft"
 
-// void setup() {
-//   // put your setup code here, to run once:
-//   Serial.begin(115200);
-//   pinMode(2, OUTPUT);
-// }
-
 void writeFile() {
   SD.begin(CS_PIN);
 
@@ -42,10 +36,30 @@ void readFile() {
   SD.end();
 }
 
+void printOnScreen(String temperature, String humidity) {
+  // Wrap text at right and bottom of screen and set text size
+  tft.setTextWrap(true, true);
+  tft.setTextSize(2);
+
+  // Print Temperature and humidity
+  printLine("Temp", temperature);
+  printLine("Humidity", humidity);
+}
+
+void printLine(String heading, String value) {
+  tft.setTextColor(TFT_GREEN, TFT_BLACK);
+  tft.setCursor(5, 5);
+  tft.print(heading + ":");
+  tft.setTextColor(TFT_MAGENTA);
+  tft.println(value);
+}
+
 // -------------------------------------------------------------------------
 // Setup
 // -------------------------------------------------------------------------
 void setup(void) {
+  Serial.begin(115200);
+
   tft.init();
   tft.setRotation(0);
 
@@ -56,23 +70,5 @@ void setup(void) {
 // Main loop
 // -------------------------------------------------------------------------
 void loop() {
-  // Wrap text at right and bottom of screen
-  tft.setTextWrap(true, true);
-  tft.setTextPadding(2.5);
-
-  // Font and background colour, background colour is used for anti-alias blending
-  tft.setTextColor(TFT_GREEN, TFT_BLACK);
-  tft.setTextSize(2);
-
-  // Set "cursor" at top left corner of display (0,0)
-  // (cursor will move to next line automatically during printing with 'tft.println'
-  //  or stay on the line is there is room for the text with tft.print)
-  tft.setCursor(5, 5);
-
-  // Print text on the screen
-  tft.print("Temp:");
-
-  // Set the font colour to be magenta
-  tft.setTextColor(TFT_MAGENTA);
-  tft.println(23);
+  printOnScreen("22", "23");
 }
