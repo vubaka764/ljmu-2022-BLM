@@ -18,11 +18,14 @@
 // CCS = 5 **BLACK**
 // DHT = 16 **WHITE**
 
+#include <screen.h>
+
+TFT_eSPI tft = TFT_eSPI();  
+tftScreen* screen = nullptr;
 const int CS_PIN = 5;
 const int DHT_PIN = 16;
 String fileName = "/arduino.txt";
 
-TFT_eSPI    tft = TFT_eSPI();    
 DHT dht(DHT_PIN, DHT11);
 
 void writeFile() {
@@ -51,43 +54,21 @@ void readFile() {
   SD.end();
 }
 
-void printLine(String heading, String value) {
-  tft.setTextColor(TFT_GREEN, TFT_BLACK);
-  tft.print(heading + ":");
-  tft.setTextColor(TFT_MAGENTA);
-  tft.println(value);
-}
-
-void printOnScreen(String temperature, String humidity) {
-  tft.fillScreen(TFT_BLACK);
-  // Wrap text at right and bottom of screen and set text size
-  tft.setTextWrap(true, true);
-  tft.setTextSize(1.8);
-  tft.setCursor(0,10);
-
-  // Print Temperature and humidity
-  printLine("Temperature", temperature);
-  printLine("Humidity", humidity);
-}
-
 // -------------------------------------------------------------------------
 // Setup
 // -------------------------------------------------------------------------
 void setup(void) {
   Serial.begin(115200);
 
-  tft.init();
-  tft.setRotation(0);
-
-  tft.fillScreen(TFT_BLACK);
-
   dht.begin();
+
+  screen = new tftScreen(&tft);
 }
 
 // -------------------------------------------------------------------------
 // Main loop
 // -------------------------------------------------------------------------
 void loop() {
-  printOnScreen(String(dht.readTemperature(), 0), String(dht.readHumidity(), 0));
+  screen->updateTft(dht.readTemperature(), dht.readHumidity());
   delay(1000);
 }
