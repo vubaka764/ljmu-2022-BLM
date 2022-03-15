@@ -1,3 +1,4 @@
+// Libraries
 #include <Arduino.h>
 #include <SPIFFS.h>
 #include <SD.h>
@@ -8,16 +9,25 @@
 #include <Adafruit_Sensor.h>  
 #include <DHT.h>  
 
-//PINS : 
-// SCK = 18  **BLUE**
-// SO = 19 **ORANGE**
-// SI = 23 **GREEN**
-// TCS = 15 **ORANGE**
-// RST = 4 **PURPLE**
-// D/C = 2 **YELLOW**
-// CCS = 5 **BLACK**
-// DHT = 16 **WHITE**
+/** 
+ 
+------ PINS : ------
+ 
+--- SCREEN ---
+  SCK = 18         **BLUE**
+  SO = 19          **ORANGE**
+  SI = 23          **GREEN**
+  TCS = 15         **ORANGE**
+  RST = 4          **PURPLE**
+  D/C = 2          **YELLOW**
+--- SD CARD ---
+  CCS = 5          **BLACK**
+--- DHT ---
+  DHT = 16         **WHITE**
 
+**/
+
+// Classes
 #include <screen.h>
 
 TFT_eSPI tft = TFT_eSPI();  
@@ -57,6 +67,7 @@ void readFile() {
 // -------------------------------------------------------------------------
 // Setup
 // -------------------------------------------------------------------------
+
 void setup(void) {
   Serial.begin(115200);
 
@@ -68,7 +79,12 @@ void setup(void) {
 // -------------------------------------------------------------------------
 // Main loop
 // -------------------------------------------------------------------------
+
 void loop() {
-  screen->updateTft(dht.readTemperature(), dht.readHumidity());
-  delay(1000);
+  float temperature = dht.readTemperature();
+  float humidity = dht.readHumidity();
+
+  // screen->updateTft(dht.readTemperature(), dht.readHumidity());
+
+
 }
