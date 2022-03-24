@@ -34,7 +34,9 @@ TFT_eSPI tft = TFT_eSPI();
 tftScreen* screen = nullptr;
 const int CS_PIN = 5;
 const int DHT_PIN = 16;
-String fileName = "/arduino.txt";
+//String fileName = "/arduino.txt";
+
+// Variables
 float temperature;
 float humidity;
 float minTemperature = 21.0;
@@ -53,9 +55,12 @@ enum SystemState {
 
 SystemState systemState = SYSTEM_OK;
 
+// Update System Status
 void updateSystemStatus() {
   boolean tempIssue = false;
   boolean humIssue = false;
+
+  // Check if there are issues
   if (temperature < minTemperature || temperature > maxTemperature) {
     tempIssue = true;
   } 
@@ -63,6 +68,7 @@ void updateSystemStatus() {
     humIssue = true;
   }
 
+  // Update systemState based on the issues
   if (!tempIssue && !humIssue) {
     systemState = SYSTEM_OK;
   } else if (tempIssue && !humIssue) {
@@ -136,6 +142,7 @@ void setup(void) {
 
   screen = new tftScreen(&tft);
 
+  // Feature C
   xTaskCreate(
     logSerial,
     "Serial Logging",
@@ -154,7 +161,8 @@ void loop() {
   temperature = dht.readTemperature();
   humidity = dht.readHumidity();
   updateSystemStatus();
-  
+
+  // Feature H
   // screen->updateTft(dht.readTemperature(), dht.readHumidity());
 
 }
