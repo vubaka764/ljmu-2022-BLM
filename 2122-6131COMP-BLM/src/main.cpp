@@ -34,7 +34,7 @@ TFT_eSPI tft = TFT_eSPI();
 tftScreen* screen = nullptr;
 const int CS_PIN = 5;
 const int DHT_PIN = 16;
-//String fileName = "/arduino.txt";
+String fileName = "/esp32.txt";
 
 // Variables
 float temperature;
