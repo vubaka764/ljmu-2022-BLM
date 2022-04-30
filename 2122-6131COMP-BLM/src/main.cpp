@@ -35,7 +35,6 @@ TFT_eSPI tft = TFT_eSPI();
 tftScreen *screen = nullptr;
 const int CS_PIN = 5;
 const int DHT_PIN = 16;
-String fileName = "/esp32.txt";
 
 // Variables
 float temperature;
@@ -54,6 +53,7 @@ std::vector<float> temperatureVector;
 std::vector<float> humidityVector;
 
 int lastTransmission = 0;
+String serverTime;
 
 DHT dht(DHT_PIN, DHT11);
 
@@ -102,34 +102,23 @@ void updateSystemStatus()
   }
 }
 
-void writeFile()
-{
-  SD.begin(CS_PIN);
-
-  File file = SD.open(fileName, FILE_WRITE);
-  // file.println("");
-  file.close();
-
-  SD.end();
-}
-
 void readFile()
 {
-  SD.begin(CS_PIN);
+  // SD.begin(CS_PIN);
 
-  File file = SD.open(fileName);
-  while (file.available())
-  {
-    String readLine = file.readStringUntil('\r');
-    readLine.trim();
-    if (readLine.length() > 0)
-    {
-      Serial.println(readLine);
-    }
-  }
-  file.close();
+  // File file = SD.open('E');
+  // while (file.available())
+  // {
+  //   String readLine = file.readStringUntil('\r');
+  //   readLine.trim();
+  //   if (readLine.length() > 0)
+  //   {
+  //     Serial.println(readLine);
+  //   }
+  // }
+  // file.close();
 
-  SD.end();
+  // SD.end();
 }
 
 // ***** FEATURE C *****
@@ -173,59 +162,97 @@ void logReadings(void *parameters)
   }
 }
 
-void sendValues(void *paramters)
+void sendValues(void *parameters)
 {
   for (;;)
   {
-    String url = "http://blm.atwebpages.com/blm.php?group=";
-    url.concat(groupname);
-    url.concat("&t=");
-    String tempReadings;
-    String humReadings;
-    int vectorSize = temperatureVector.size();
-    for (size_t i = lastTransmission; i < vectorSize; ++i)
-    {
-      tempReadings.concat(String(temperatureVector[i], 0) + ',');
-      humReadings.concat(String(humidityVector[i], 0) + ',');
-    }
-
-    url.concat(tempReadings);
-    url.concat("&h=");
-    url.concat(humReadings);
-    // Serial.println(url);
-    HTTPClient hClient;
-
-    hClient.begin(url);
-    const char *headers[] = {"Date"};
-    hClient.collectHeaders(headers, 1);
-    hClient.setTimeout(3500);
-    int retCode = hClient.GET();
-    if (retCode > 0)
-    {
-      // a real HTTP code
-      // Serial.print("HTTP ");
-      // Serial.println(retCode);
-      if (retCode == HTTP_CODE_OK)
-      {
-        Serial.println("Readings transmitted | " + hClient.header("Date"));
-        lastTransmission = vectorSize;
-        // Serial.println("Date = " + hClient.header("Date"));
-      }
-      else
-      {
-        Serial.println("Error transmitting data...");
-        Serial.println(HTTPClient::errorToString(retCode));
-      }
-    }
-
     vTaskDelay(30000 / portTICK_PERIOD_MS);
+    int vectorSize = temperatureVector.size();
+    if (vectorSize > 0)
+    {
+
+      String url = "http://blm.atwebpages.com/blm.php?group=";
+      url.concat(groupname);
+      url.concat("&t=");
+      String tempReadings;
+      String humReadings;
+
+      for (size_t i = lastTransmission; i < vectorSize; ++i)
+      {
+        tempReadings.concat(String(temperatureVector[i], 0) + ',');
+        humReadings.concat(String(humidityVector[i], 0) + ',');
+      }
+
+      url.concat(tempReadings);
+      url.concat("&h=");
+      url.concat(humReadings);
+      // Serial.println(url);
+      HTTPClient hClient;
+
+      hClient.begin(url);
+      const char *headers[] = {"Date"};
+      hClient.collectHeaders(headers, 1);
+      hClient.setTimeout(3500);
+      int retCode = hClient.GET();
+      if (retCode > 0)
+      {
+        // a real HTTP code
+        // Serial.print("HTTP ");
+        // Serial.println(retCode);
+        if (retCode == HTTP_CODE_OK)
+        {
+          Serial.println("Readings transmitted | " + hClient.header("Date"));
+          serverTime = hClient.header("Date");
+          lastTransmission = vectorSize;
+          // Serial.println("Date = " + hClient.header("Date"));
+        }
+        else
+        {
+          Serial.println("Error transmitting data...");
+          Serial.println(HTTPClient::errorToString(retCode));
+        }
+      }
+    }
   }
 }
 
-// for (auto log : *dynVector) {
-//
-// }
-// dynVector->clear();
+// ***** FEATURE F *****
+void writeValues(void *parameters)
+{
+  for (;;)
+  {
+    vTaskDelay(120000 / portTICK_PERIOD_MS);
+
+    SD.begin(CS_PIN);
+
+    serverTime.replace(",", "");
+    serverTime.replace(" ", "_");
+    serverTime.replace(":", "_");
+
+    String fileName = "/" + serverTime + ".txt";
+
+    // Serial.println(fileName);
+    File file = SD.open(fileName, FILE_WRITE);
+
+    int vectorSize = temperatureVector.size();
+    for (size_t i = lastTransmission; i < vectorSize; ++i)
+    {
+      file.print("Temperature: ");
+      file.print(String(temperatureVector[i], 0));
+      file.print(", Humidity: ");
+      file.println(String(humidityVector[i], 0));
+    }
+
+    file.close();
+    Serial.println("Wrote to file.");
+
+    temperatureVector.clear();
+    humidityVector.clear();
+    lastTransmission = 0;
+
+    SD.end();
+  }
+}
 
 // -------------------------------------------------------------------------
 // Setup
@@ -280,6 +307,15 @@ void setup(void)
       NULL,
       3,
       NULL);
+
+  // Feature G
+  xTaskCreate(
+      writeValues,
+      "Saving Values",
+      6000,
+      NULL,
+      4,
+      NULL);
 }
 
 // -------------------------------------------------------------------------
@@ -293,5 +329,5 @@ void loop()
   updateSystemStatus();
 
   // Feature H
-  // screen->updateTft(temperature, humidity);
+  screen->updateTft(temperature, humidity);
 }
