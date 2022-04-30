@@ -216,7 +216,7 @@ void sendValues(void *parameters)
   }
 }
 
-// ***** FEATURE F *****
+// ***** FEATURE G *****
 void writeValues(void *parameters)
 {
   for (;;)
@@ -251,68 +251,6 @@ void writeValues(void *parameters)
     lastTransmission = 0;
 
     SD.end();
-  }
-}
-
-// ***** FEATURE F *****
-void logReadings(void *parameters)
-{
-  for (;;)
-  {
-
-    temperatureVector.push_back(temperature);
-    humidityVector.push_back(humidity);
-
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
-  }
-}
-
-void sendValues(void *paramters)
-{
-  for (;;)
-  {
-    String url = "http://blm.atwebpages.com/blm.php?group=";
-    url.concat(groupname);
-    url.concat("&t=");
-    String tempReadings;
-    String humReadings;
-    int vectorSize = temperatureVector.size();
-    for (size_t i = lastTransmission; i < vectorSize; ++i)
-    {
-      tempReadings.concat(String(temperatureVector[i], 0) + ',');
-      humReadings.concat(String(humidityVector[i], 0) + ',');
-    }
-
-    url.concat(tempReadings);
-    url.concat("&h=");
-    url.concat(humReadings);
-    // Serial.println(url);
-    HTTPClient hClient;
-
-    hClient.begin(url);
-    const char *headers[] = {"Date"};
-    hClient.collectHeaders(headers, 1);
-    hClient.setTimeout(3500);
-    int retCode = hClient.GET();
-    if (retCode > 0)
-    {
-      // a real HTTP code
-      // Serial.print("HTTP ");
-      // Serial.println(retCode);
-      if (retCode == HTTP_CODE_OK)
-      {
-        Serial.println("Readings transmitted | " + hClient.header("Date"));
-        lastTransmission = vectorSize;
-        // Serial.println("Date = " + hClient.header("Date"));
-      }
-      else
-      {
-        Serial.println("Error transmitting data...");
-        Serial.println(HTTPClient::errorToString(retCode));
-      }
-    }
-
-    vTaskDelay(30000 / portTICK_PERIOD_MS);
   }
 }
 
