@@ -41,9 +41,9 @@ tftScreen *screen = nullptr;
 // PINS
 const int CS_PIN = 5;
 const int DHT_PIN = 16;
-const int LED_RED_PIN = 0;
-const int LED_GREEN_PIN = 22;
-const int LED_BLUE_PIN = 21;
+const int PIN_RED = 0;
+const int PIN_GREEN = 22;
+const int PIN_BLUE = 21;
 
 // Variables
 float temperature;
@@ -119,24 +119,24 @@ void lightLED()
   switch (systemState)
   {
   case SYSTEM_OK:
-    digitalWrite(LED_RED_PIN, LOW);
-    digitalWrite(LED_GREEN_PIN, HIGH);
-    digitalWrite(LED_BLUE_PIN, LOW);
+    digitalWrite(PIN_RED, LOW);
+    digitalWrite(PIN_GREEN, HIGH);
+    digitalWrite(PIN_BLUE, LOW);
     break;
   case TEMP_ISSUE:
-    digitalWrite(LED_RED_PIN, HIGH);
-    digitalWrite(LED_GREEN_PIN, LOW);
-    digitalWrite(LED_BLUE_PIN, LOW);
+    digitalWrite(PIN_RED, HIGH);
+    digitalWrite(PIN_GREEN, LOW);
+    digitalWrite(PIN_BLUE, LOW);
     break;
   case HUM_ISSUE:
-    digitalWrite(LED_RED_PIN, LOW);
-    digitalWrite(LED_GREEN_PIN, LOW);
-    digitalWrite(LED_BLUE_PIN, HIGH);
+    digitalWrite(PIN_RED, LOW);
+    digitalWrite(PIN_GREEN, LOW);
+    digitalWrite(PIN_BLUE, HIGH);
     break;
   case BOTH_ISSUE:
-    digitalWrite(LED_RED_PIN, LOW);
-    digitalWrite(LED_GREEN_PIN, LOW);
-    digitalWrite(LED_BLUE_PIN, LOW);
+    digitalWrite(PIN_RED, LOW);
+    digitalWrite(PIN_GREEN, LOW);
+    digitalWrite(PIN_BLUE, LOW);
     break;
   }
 }
@@ -281,25 +281,25 @@ void testLED(void)
   // color RED
 
   Serial.println("Lighting LED red.");
-  digitalWrite(LED_RED_PIN, HIGH);
-  digitalWrite(LED_GREEN_PIN, LOW);
-  digitalWrite(LED_BLUE_PIN, LOW);
+  digitalWrite(PIN_RED, HIGH);
+  digitalWrite(PIN_GREEN, LOW);
+  digitalWrite(PIN_BLUE, LOW);
 
   delay(2000); // keep the color 2 seconds
 
   // color GREEN
   Serial.println("Lighting LED green.");
-  digitalWrite(LED_RED_PIN, LOW);
-  digitalWrite(LED_GREEN_PIN, HIGH);
-  digitalWrite(LED_BLUE_PIN, LOW);
+  digitalWrite(PIN_RED, LOW);
+  digitalWrite(PIN_GREEN, HIGH);
+  digitalWrite(PIN_BLUE, LOW);
 
   delay(2000); // keep the color 2 seconds
 
   // color BLUE
   Serial.println("Lighting LED blue.");
-  digitalWrite(LED_RED_PIN, LOW);
-  digitalWrite(LED_GREEN_PIN, LOW);
-  digitalWrite(LED_BLUE_PIN, HIGH);
+  digitalWrite(PIN_RED, LOW);
+  digitalWrite(PIN_GREEN, LOW);
+  digitalWrite(PIN_BLUE, HIGH);
 
   delay(2000); // keep the color 2 seconds
 
@@ -317,7 +317,7 @@ void testDHT(void)
   // Read temperature as Fahrenheit (isFahrenheit = true)
   float f = dht.readTemperature(true);
 
-  // Check if any reads failed and if any do the system will shutdown
+  // Check if any reads failed and if it any do the system shutsdown
   if (isnan(humidity) || isnan(temperature) || isnan(f))
   {
     Serial.println("Failed to read from DHT sensor! Shutting system down...");
@@ -339,33 +339,6 @@ void sdCardTest(void)
   file.println("SD Card Test");
   file.close();
   Serial.println("Wrote to file.");
-
-
-  // open the file to read
-  myFile = SD.open("test.txt");
-  if (myFile) {
-  Serial.println("test.txt:");
-  
-  // read from the file until there's nothing else 
-  while (myFile.available()) {
-  Serial.write(myFile.read());
-  }
-  // close the file:
-  myFile.close();
-  } else {
-  // if the file didn't open print an error and shutdown
-  Serial.println("Failed to open test.txt! System shutting down...");
-  void shutdown();
-  }
-  }
-  {
-    My.Computer.FileSystem.DeleteFile("C:\test.txt",
-    Microsoft.VisualBasic.FileIO.UIOption.AllDialogs,
-    Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin)
-  }
-void loop() {
-// nothing happens after setup
-}
 
   // TODO: ** Read Data ** if no value then fail
   
@@ -389,33 +362,17 @@ void loop() {
   SD.end();
 }
 
-{
-  pinMode(BACKLIGHT, OUTPUT);
-  digitalWrite(BACKLIGHT, HIGH);
-  ledcAttachPin(BACKLIGHT, 0);
-  ledcSetup(0, 1000, 7);
-  Serial.println("LCD screen test successful");
-}
-{
-  else Serial.println("Failed to display screen! System shutting down...");
-  void shutdown();
-}
-
 void connectToWiFi(void)
 {
   Serial.print("Connecting to ");
   Serial.println(SSID);
   WiFi.begin(SSID, PASS);
 
+  // TODO: Shutdown the system if connection is not made in 20 seconds
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(250);
     Serial.print(".");
-  }
-  {
-    delay(20000);
-    else Serial.println("Failed to connect WiFi! System shutting down...");
-    void shutdown();
   }
   Serial.print("Connected as : ");
   Serial.println(WiFi.localIP());
@@ -429,9 +386,9 @@ void setup(void)
 {
   // Set up
   Serial.begin(115200);
-  pinMode(LED_RED_PIN, OUTPUT);
-  pinMode(LED_GREEN_PIN, OUTPUT);
-  pinMode(LED_BLUE_PIN, OUTPUT);
+  pinMode(PIN_RED, OUTPUT);
+  pinMode(PIN_GREEN, OUTPUT);
+  pinMode(PIN_BLUE, OUTPUT);
   dht.begin();
   screen = new tftScreen(&tft);
 
