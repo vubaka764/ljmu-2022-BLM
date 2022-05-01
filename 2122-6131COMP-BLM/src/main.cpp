@@ -25,113 +25,25 @@
   CCS = 5          **BLACK**
 --- DHT ---
   DHT = 16         **WHITE**
+--- LED ---
+  RED = 0
+  GREEN = 22
+  BLUE = 21
 
 **/
-
-//POST
-
-#define PIN_RED    0 
-#define PIN_GREEN  22 
-#define PIN_BLUE   21 
-
-void setup() {
-  pinMode(PIN_RED,   OUTPUT);
-  pinMode(PIN_GREEN, OUTPUT);
-  pinMode(PIN_BLUE,  OUTPUT);
-}
-
-void loop() {
-  // color RED
-  digitalWrite(PIN_RED,   HIGH);
-  digitalWrite(PIN_GREEN, LOW);
-  digitalWrite(PIN_BLUE,  LOW);
-
-  delay(1000); // keep the color 1 second
-
-  // color GREEN
-  digitalWrite(PIN_RED,   LOW);
-  digitalWrite(PIN_GREEN, HIGH);
-  digitalWrite(PIN_BLUE,  LOW);
-
-  delay(1000); // keep the color 1 second
-
-  // color BLUE
- digitalWrite(PIN_RED,   LOW);
- digitalWrite(PIN_GREEN, LOW);
-  digitalWrite(PIN_BLUE,  HIGH);
-
-  delay(1000); // keep the color 1 second
-}
-
-void setup(void)
-{
-  Serial.begin(115200);
-
-  delay(10000);
-
-  Serial.print("Wifi test");
-  Serial.print("Connecting");
-  Serial.println(SSID);
-  WiFi.begin(SSID, PASS);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(250);
-    Serial.print(".");
-  }
-  Serial.print("Connected");
-  {
-    else Serial.print("System Fail");
-    void shutdown();
-  }
-
-  void setup() {
-  Serial.begin(9600);
-  Serial.println("DHT11 test"));
-
-  dht.begin();
-}
-
-void loop() {
-  delay(2000);
-
-  
-  float h = dht.readHumidity();
-  // Read temperature as Celsius (the default)
-  float t = dht.readTemperature();
-  // Read temperature as Fahrenheit (isFahrenheit = true)
-  float f = dht.readTemperature(true);
-
-  // Check if any reads failed and if it any do the system shutsdown 
-  if (isnan(h) || isnan(t) || isnan(f)) {
-    Serial.println("Failed to read from DHT sensor!"));
-    void shutdown();
-  }
-
-
-void setup() {
-  Serial.begin(9600);
-  Serial.println("SD test"));
-  String filename = "test.txt";
-
-  file = SD.open(filename.c_str(), FILE_WRITE);
-  file.close();
-    Serial.println("Wrote to file.");
-
-    else else Serial.print("System Fail");
-    void shutdown();
-    SD.end();
-  }
-
-
-
 
 // Classes
 #include <screen.h>
 
 TFT_eSPI tft = TFT_eSPI();
 tftScreen *screen = nullptr;
+
+// PINS
 const int CS_PIN = 5;
 const int DHT_PIN = 16;
+const int PIN_RED = 0;
+const int PIN_GREEN = 22;
+const int PIN_BLUE = 21;
 
 // Variables
 float temperature;
@@ -146,9 +58,11 @@ const char *SSID = "";
 const char *PASS = "";
 String groupname = "BLM";
 
+// Vectors
 std::vector<float> temperatureVector;
 std::vector<float> humidityVector;
 
+// Server values
 int lastTransmission = 0;
 String serverTime;
 
@@ -197,25 +111,6 @@ void updateSystemStatus()
   {
     systemState = BOTH_ISSUE;
   }
-}
-
-void readFile()
-{
-  // SD.begin(CS_PIN);
-
-  // File file = SD.open('E');
-  // while (file.available())
-  // {
-  //   String readLine = file.readStringUntil('\r');
-  //   readLine.trim();
-  //   if (readLine.length() > 0)
-  //   {
-  //     Serial.println(readLine);
-  //   }
-  // }
-  // file.close();
-
-  // SD.end();
 }
 
 // ***** FEATURE C *****
@@ -351,24 +246,101 @@ void writeValues(void *parameters)
   }
 }
 
-// for (auto log : *dynVector) {
-//
-// }
-// dynVector->clear();
-
-// -------------------------------------------------------------------------
-// Setup
-// -------------------------------------------------------------------------
-
-void setup(void)
+// ***** FEATURE A *****
+void testLED(void)
 {
-  Serial.begin(115200);
+  Serial.println("LED test.");
+  // color RED
 
-  delay(5000);
+  Serial.println("Lighting LED red.");
+  digitalWrite(PIN_RED, HIGH);
+  digitalWrite(PIN_GREEN, LOW);
+  digitalWrite(PIN_BLUE, LOW);
 
+  delay(2000); // keep the color 2 seconds
+
+  // color GREEN
+  Serial.println("Lighting LED green.");
+  digitalWrite(PIN_RED, LOW);
+  digitalWrite(PIN_GREEN, HIGH);
+  digitalWrite(PIN_BLUE, LOW);
+
+  delay(2000); // keep the color 2 seconds
+
+  // color BLUE
+  Serial.println("Lighting LED blue.");
+  digitalWrite(PIN_RED, LOW);
+  digitalWrite(PIN_GREEN, LOW);
+  digitalWrite(PIN_BLUE, HIGH);
+
+  delay(2000); // keep the color 2 seconds
+
+  Serial.println("LED test finished.");
+}
+
+void testDHT(void)
+{
+  Serial.println("DHT test starting...");
+
+  // Read humidity
+  humidity = dht.readHumidity();
+  // Read temperature as Celsius (the default)
+  temperature = dht.readTemperature();
+  // Read temperature as Fahrenheit (isFahrenheit = true)
+  float f = dht.readTemperature(true);
+
+  // Check if any reads failed and if it any do the system shutsdown
+  if (isnan(humidity) || isnan(temperature) || isnan(f))
+  {
+    Serial.println("Failed to read from DHT sensor! Shutting system down...");
+    void shutdown();
+  }
+  Serial.println("DHT test successful.");
+}
+
+void sdCardTest(void)
+{
+  SD.begin(CS_PIN);
+
+  Serial.println("SD test");
+
+  // Write test file
+  String testFileName = "test.txt";
+
+  File file = SD.open(testFileName, FILE_WRITE);
+  file.println("SD Card Test");
+  file.close();
+  Serial.println("Wrote to file.");
+
+  // TODO: ** Read Data ** if no value then fail
+  
+  // File file = SD.open(testFileName);
+  // while (file.available())
+  // {
+  //   String readLine = file.readStringUntil('\r');
+  //   readLine.trim();
+  //   if (readLine.length() > 0)
+  //   {
+  //     Serial.println(readLine);
+  //   }
+  // }
+  // file.close();
+
+  // Serial.println("System Fail");
+  // void shutdown();
+
+  // TODO: ** delete file after test is done **
+
+  SD.end();
+}
+
+void connectToWiFi(void)
+{
   Serial.print("Connecting to ");
   Serial.println(SSID);
   WiFi.begin(SSID, PASS);
+
+  // TODO: Shutdown the system if connection is not made in 20 seconds
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(250);
@@ -376,13 +348,27 @@ void setup(void)
   }
   Serial.print("Connected as : ");
   Serial.println(WiFi.localIP());
+}
 
+// -------------------------------------------------------------------------
+// Setup
+// -------------------------------------------------------------------------
+
+void setup(void)
+{
+  // Set up
+  Serial.begin(115200);
+  pinMode(PIN_RED, OUTPUT);
+  pinMode(PIN_GREEN, OUTPUT);
+  pinMode(PIN_BLUE, OUTPUT);
   dht.begin();
-
-  temperature = dht.readTemperature();
-  humidity = dht.readHumidity();
-
   screen = new tftScreen(&tft);
+
+  // Feature A
+  testLED();
+  connectToWiFi();
+  testDHT();
+  Serial.println("System passed all checks.");
 
   // Feature C
   xTaskCreate(
@@ -432,5 +418,4 @@ void loop()
 
   // Feature H
   screen->updateTft(temperature, humidity);
-
 }
