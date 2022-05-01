@@ -113,6 +113,34 @@ void updateSystemStatus()
   }
 }
 
+// ***** FEATURE B *****
+void lightLED()
+{
+  switch (systemState)
+  {
+  case SYSTEM_OK:
+    digitalWrite(LED_RED_PIN, LOW);
+    digitalWrite(LED_GREEN_PIN, HIGH);
+    digitalWrite(LED_BLUE_PIN, LOW);
+    break;
+  case TEMP_ISSUE:
+    digitalWrite(LED_RED_PIN, HIGH);
+    digitalWrite(LED_GREEN_PIN, LOW);
+    digitalWrite(LED_BLUE_PIN, LOW);
+    break;
+  case HUM_ISSUE:
+    digitalWrite(LED_RED_PIN, LOW);
+    digitalWrite(LED_GREEN_PIN, LOW);
+    digitalWrite(LED_BLUE_PIN, HIGH);
+    break;
+  case BOTH_ISSUE:
+    digitalWrite(LED_RED_PIN, LOW);
+    digitalWrite(LED_GREEN_PIN, LOW);
+    digitalWrite(LED_BLUE_PIN, LOW);
+    break;
+  }
+}
+
 // ***** FEATURE C *****
 void logSerial(void *parameters)
 {
@@ -415,7 +443,8 @@ void loop()
   temperature = dht.readTemperature();
   humidity = dht.readHumidity();
   updateSystemStatus();
-
-  // Feature H
+  lightLED();
+  //Feature H
   screen->updateTft(temperature, humidity);
+
 }
