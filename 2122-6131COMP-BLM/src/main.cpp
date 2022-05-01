@@ -28,6 +28,103 @@
 
 **/
 
+//POST
+
+#define PIN_RED    0 
+#define PIN_GREEN  22 
+#define PIN_BLUE   21 
+
+void setup() {
+  pinMode(PIN_RED,   OUTPUT);
+  pinMode(PIN_GREEN, OUTPUT);
+  pinMode(PIN_BLUE,  OUTPUT);
+}
+
+void loop() {
+  // color RED
+  digitalWrite(PIN_RED,   HIGH);
+  digitalWrite(PIN_GREEN, LOW);
+  digitalWrite(PIN_BLUE,  LOW);
+
+  delay(1000); // keep the color 1 second
+
+  // color GREEN
+  digitalWrite(PIN_RED,   LOW);
+  digitalWrite(PIN_GREEN, HIGH);
+  digitalWrite(PIN_BLUE,  LOW);
+
+  delay(1000); // keep the color 1 second
+
+  // color BLUE
+ digitalWrite(PIN_RED,   LOW);
+ digitalWrite(PIN_GREEN, LOW);
+  digitalWrite(PIN_BLUE,  HIGH);
+
+  delay(1000); // keep the color 1 second
+}
+
+void setup(void)
+{
+  Serial.begin(115200);
+
+  delay(10000);
+
+  Serial.print("Wifi test");
+  Serial.print("Connecting");
+  Serial.println(SSID);
+  WiFi.begin(SSID, PASS);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(250);
+    Serial.print(".");
+  }
+  Serial.print("Connected");
+  {
+    else Serial.print("System Fail");
+    void shutdown();
+  }
+
+  void setup() {
+  Serial.begin(9600);
+  Serial.println("DHT11 test"));
+
+  dht.begin();
+}
+
+void loop() {
+  delay(2000);
+
+  
+  float h = dht.readHumidity();
+  // Read temperature as Celsius (the default)
+  float t = dht.readTemperature();
+  // Read temperature as Fahrenheit (isFahrenheit = true)
+  float f = dht.readTemperature(true);
+
+  // Check if any reads failed and if it any do the system shutsdown 
+  if (isnan(h) || isnan(t) || isnan(f)) {
+    Serial.println("Failed to read from DHT sensor!"));
+    void shutdown();
+  }
+
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("SD test"));
+  String filename = "test.txt";
+
+  file = SD.open(filename.c_str(), FILE_WRITE);
+  file.close();
+    Serial.println("Wrote to file.");
+
+    else else Serial.print("System Fail");
+    void shutdown();
+    SD.end();
+  }
+
+
+
+
 // Classes
 #include <screen.h>
 
