@@ -8,6 +8,8 @@
 #include <WiFiClientSecure.h>
 #include <Adafruit_Sensor.h>  
 #include <DHT.h>  
+#include <ESP32Encoder.h>
+
 
 /** 
  
@@ -162,7 +164,14 @@ void loop() {
   humidity = dht.readHumidity();
   updateSystemStatus();
 
+  //Feature D
+
+
+  //Feature E
+
   // Feature H
-  // screen->updateTft(dht.readTemperature(), dht.readHumidity());
+  screen->updateTft(dht.readTemperature(), dht.readHumidity());
 
 }
+
+
