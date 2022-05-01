@@ -41,9 +41,9 @@ tftScreen *screen = nullptr;
 // PINS
 const int CS_PIN = 5;
 const int DHT_PIN = 16;
-const int PIN_RED = 0;
-const int PIN_GREEN = 22;
-const int PIN_BLUE = 21;
+const int LED_RED_PIN = 0;
+const int LED_GREEN_PIN = 22;
+const int LED_BLUE_PIN = 21;
 
 // Variables
 float temperature;
@@ -281,25 +281,25 @@ void testLED(void)
   // color RED
 
   Serial.println("Lighting LED red.");
-  digitalWrite(PIN_RED, HIGH);
-  digitalWrite(PIN_GREEN, LOW);
-  digitalWrite(PIN_BLUE, LOW);
+  digitalWrite(LED_RED_PIN, HIGH);
+  digitalWrite(LED_GREEN_PIN, LOW);
+  digitalWrite(LED_BLUE_PIN, LOW);
 
   delay(2000); // keep the color 2 seconds
 
   // color GREEN
   Serial.println("Lighting LED green.");
-  digitalWrite(PIN_RED, LOW);
-  digitalWrite(PIN_GREEN, HIGH);
-  digitalWrite(PIN_BLUE, LOW);
+  digitalWrite(LED_RED_PIN, LOW);
+  digitalWrite(LED_GREEN_PIN, HIGH);
+  digitalWrite(LED_BLUE_PIN, LOW);
 
   delay(2000); // keep the color 2 seconds
 
   // color BLUE
   Serial.println("Lighting LED blue.");
-  digitalWrite(PIN_RED, LOW);
-  digitalWrite(PIN_GREEN, LOW);
-  digitalWrite(PIN_BLUE, HIGH);
+  digitalWrite(LED_RED_PIN, LOW);
+  digitalWrite(LED_GREEN_PIN, LOW);
+  digitalWrite(LED_BLUE_PIN, HIGH);
 
   delay(2000); // keep the color 2 seconds
 
@@ -386,9 +386,9 @@ void setup(void)
 {
   // Set up
   Serial.begin(115200);
-  pinMode(PIN_RED, OUTPUT);
-  pinMode(PIN_GREEN, OUTPUT);
-  pinMode(PIN_BLUE, OUTPUT);
+  pinMode(LED_RED_PIN, OUTPUT);
+  pinMode(LED_GREEN_PIN, OUTPUT);
+  pinMode(LED_BLUE_PIN, OUTPUT);
   dht.begin();
   screen = new tftScreen(&tft);
 
