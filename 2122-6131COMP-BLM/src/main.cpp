@@ -15,7 +15,7 @@
 ------ PINS : ------
 
 --- SCREEN ---
-  SCK = 18         **BLUE**
+  SCK = 18         **BLUE****
   SO = 19          **ORANGE**
   SI = 23          **GREEN**
   TCS = 15         **ORANGE**
