@@ -289,7 +289,7 @@ void testDHT(void)
   // Read temperature as Fahrenheit (isFahrenheit = true)
   float f = dht.readTemperature(true);
 
-  // Check if any reads failed and if it any do the system shutsdown
+  // Check if any reads failed and if any do the system will shutdown
   if (isnan(humidity) || isnan(temperature) || isnan(f))
   {
     Serial.println("Failed to read from DHT sensor! Shutting system down...");
@@ -311,6 +311,33 @@ void sdCardTest(void)
   file.println("SD Card Test");
   file.close();
   Serial.println("Wrote to file.");
+
+
+  // open the file to read
+  myFile = SD.open("test.txt");
+  if (myFile) {
+  Serial.println("test.txt:");
+  
+  // read from the file until there's nothing else 
+  while (myFile.available()) {
+  Serial.write(myFile.read());
+  }
+  // close the file:
+  myFile.close();
+  } else {
+  // if the file didn't open print an error and shutdown
+  Serial.println("Failed to open test.txt! System shutting down...");
+  void shutdown();
+  }
+  }
+  {
+    My.Computer.FileSystem.DeleteFile("C:\test.txt",
+    Microsoft.VisualBasic.FileIO.UIOption.AllDialogs,
+    Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin)
+  }
+void loop() {
+// nothing happens after setup
+}
 
   // TODO: ** Read Data ** if no value then fail
   
@@ -334,17 +361,33 @@ void sdCardTest(void)
   SD.end();
 }
 
+{
+  pinMode(BACKLIGHT, OUTPUT);
+  digitalWrite(BACKLIGHT, HIGH);
+  ledcAttachPin(BACKLIGHT, 0);
+  ledcSetup(0, 1000, 7);
+  Serial.println("LCD screen test successful");
+}
+{
+  else Serial.println("Failed to display screen! System shutting down...");
+  void shutdown();
+}
+
 void connectToWiFi(void)
 {
   Serial.print("Connecting to ");
   Serial.println(SSID);
   WiFi.begin(SSID, PASS);
 
-  // TODO: Shutdown the system if connection is not made in 20 seconds
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(250);
     Serial.print(".");
+  }
+  {
+    delay(20000);
+    else Serial.println("Failed to connect WiFi! System shutting down...");
+    void shutdown();
   }
   Serial.print("Connected as : ");
   Serial.println(WiFi.localIP());
