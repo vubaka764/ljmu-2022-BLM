@@ -103,6 +103,8 @@ void serialPrintChange(SystemState previous)
       case BOTH_ISSUE:
         Serial.println("** System State changed to Green : Caused by temperature and humidity **");
         break;
+      case SYSTEM_OK:
+        break;
       }
     }
 
@@ -119,6 +121,8 @@ void serialPrintChange(SystemState previous)
         break;
       case BOTH_ISSUE:
         Serial.println("** System State changed from Green to Red/Blue : Caused by temperature and humidity **");
+        break;
+      case SYSTEM_OK:
         break;
       }
     }
@@ -325,8 +329,6 @@ void writeValues(void *parameters)
   {
     vTaskDelay(120000 / portTICK_PERIOD_MS);
 
-    SD.begin(CS_PIN);
-
     serverTime.replace(",", "");
     serverTime.replace(" ", "_");
     serverTime.replace(":", "_");
@@ -351,13 +353,11 @@ void writeValues(void *parameters)
     temperatureVector.clear();
     humidityVector.clear();
     lastTransmission = 0;
-
-    SD.end();
   }
 }
 
 // ***** FEATURE A *****
-void testLED(void)
+void testLED()
 {
   Serial.println("LED test.");
 
@@ -385,7 +385,7 @@ void testLED(void)
   Serial.println("LED test finished.");
 }
 
-void testDHT(void)
+void testDHT()
 {
   Serial.println("DHT test starting...");
 
@@ -406,40 +406,54 @@ void testDHT(void)
   Serial.println("DHT test successful.");
 }
 
-void sdCardTest(void)
+bool sdCardTest()
 {
-  SD.begin(CS_PIN);
-
-  Serial.println("SD test");
+  Serial.println("Beginning SD test...");
 
   // Write test file
-  String testFileName = "test.txt";
+  String testFileName = "/test.txt";
+  String testFileString = "SD Card Test";
+
+  // if (SD.)
+  // {
+  //   Serial.println("Error writing the file: SD Card Test Failed");
+  //   return false;
+  // }
 
   File file = SD.open(testFileName, FILE_WRITE);
-  file.println("SD Card Test");
+
+  if (!file)
+  {
+    Serial.println("SD Test Failed. Feature G Disabled.");
+    SD.end();
+    return false;
+  }
+
+  file.println(testFileString);
+  Serial.println("Writing to file...");
   file.close();
-  Serial.println("Wrote to file.");
 
-  // TODO: ** Read Data ** if no value then fail
+  // Read Data -- if no value then fail
 
-  // File file = SD.open(testFileName);
-  // while (file.available())
-  // {
-  //   String readLine = file.readStringUntil('\r');
-  //   readLine.trim();
-  //   if (readLine.length() > 0)
-  //   {
-  //     Serial.println(readLine);
-  //   }
-  // }
-  // file.close();
-
-  // Serial.println("System Fail");
-  // void shutdown();
-
-  // TODO: ** delete file after test is done **
-
-  SD.end();
+  file = SD.open(testFileName);
+  String readLine = file.readStringUntil('\r');
+  Serial.println("Reading file...");
+  readLine.trim();
+  if (readLine.equals(testFileString))
+  {
+    // Serial.println(readLine);
+    Serial.println("SD Test Passed.");
+    file.close();
+    SD.remove(testFileName);
+    return true;
+  }
+  else
+  {
+    Serial.println("SD Test Failed. Feature G Disabled.");
+    file.close();
+    SD.remove(testFileName);
+    return false;
+  }
 }
 
 void connectToWiFi(void)
@@ -469,6 +483,7 @@ void setup(void)
   pinMode(PIN_RED, OUTPUT);
   pinMode(PIN_GREEN, OUTPUT);
   pinMode(PIN_BLUE, OUTPUT);
+  SD.begin(CS_PIN);
   dht.begin();
   screen = new tftScreen(&tft);
   lastChange = millis();
@@ -477,7 +492,8 @@ void setup(void)
   testLED();
   connectToWiFi();
   testDHT();
-  Serial.println("System passed all checks.");
+  bool isSdCardConnected = sdCardTest();
+  Serial.println("System passed all neccessary checks.");
   // Determine system status before startup
   updateSystemStatus();
 
@@ -507,14 +523,18 @@ void setup(void)
       3,
       NULL);
 
-  // Feature G
-  xTaskCreate(
-      writeValues,
-      "Saving Values",
-      6000,
-      NULL,
-      4,
-      NULL);
+  // If system passed sd card test
+  if (isSdCardConnected)
+  {
+    // Feature G
+    xTaskCreate(
+        writeValues,
+        "Saving Values",
+        6000,
+        NULL,
+        4,
+        NULL);
+  }
 }
 
 // -------------------------------------------------------------------------
