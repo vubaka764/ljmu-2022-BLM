@@ -1,5 +1,7 @@
 // Libraries
 #include <Arduino.h>
+#include <Encoder.h>
+#include <ESP32Encoder.h>
 #include <SPIFFS.h>
 #include <SD.h>
 #include <TFT_eSPI.h>
@@ -44,26 +46,22 @@ const int DHT_PIN = 16;
 const int PIN_RED = 0;
 const int PIN_GREEN = 22;
 const int PIN_BLUE = 21;
-const int ROTARY_A = 16;
-const int ROTARY_B = 17;
+const int ROTARY_A = 14;
+const int ROTARY_B = 12;
+const int SWITCH_PIN = 27;
 
 // Variables
 float temperature;
 float humidity;
 float minTemperature = 20.0;
 float maxTemperature = 25.0;
-<<<<<<< HEAD
-float minHumidity = 30.0;
-float maxHumidity = 60.0;
-
-=======
 float minHumidity = 40.0;
 float maxHumidity = 60.0;
->>>>>>> e7da3f7b1aacec4bc0dda1b52312bd1ee38c1308
+bool isAdjustingMax;
 
 // Config
-const char *SSID = "VodaVice";
-const char *PASS = "Dj0ab000";
+const char *SSID = "";
+const char *PASS = "";
 String groupname = "BLM";
 
 // Vectors
@@ -79,10 +77,7 @@ long lastChange;
 bool blinkRed = true;
 
 DHT dht(DHT_PIN, DHT11);
-Encoder minHumEncoder(ROTARY_A, ROTARY_B);
-Encoder maxHumEncoder(ROTARY_A, ROTARY_B);
-Encoder minTempEncoder(ROTARY_A, ROTARY_B);
-Encoder maxTempEncoder(ROTARY_A, ROTARY_B);
+ESP32Encoder encoder;
 
 enum SystemState
 {
@@ -90,10 +85,6 @@ enum SystemState
   HUM_ISSUE,
   BOTH_ISSUE,
   SYSTEM_OK,
-  MINHUMIDITY,
-  MAXHUMIDITY,
-  MINTEMPERATURE,
-  MAXTEMPERATURE,
 };
 
 SystemState systemState = SYSTEM_OK;
@@ -272,53 +263,75 @@ void logSerial(void *parameters)
 }
 
 // ***** FEATURE D AND E *****
-int lastState;
+void checkSwitch()
+{
+  if (digitalRead(SWITCH_PIN) != isAdjustingMax)
+  {
+
+    if (digitalRead(SWITCH_PIN))
+    {
+      isAdjustingMax = true;
+      encoder.setCount(maxTemperature);
+      Serial.println("[Switch] Switched to adjusting max temperature");
+    }
+    else
+    {
+      isAdjustingMax = false;
+      encoder.setCount(minTemperature);
+      Serial.println("[Switch] Switched to adjusting min temperature");
+    }
+  }
+}
+
+long lastButtonSerialLog;
+
 void checkButton()
 {
-  if (digitalRead(SWITCH) != systemState)
+  float encoderCount = encoder.getCount();
+  if (isAdjustingMax)
   {
-    lastState = digitalRead(SWITCH);
-    if (lastState == BOTH_ISSUE)
+    if (maxTemperature != encoderCount)
     {
-      if (current == systemState::BOTH_ISSUE)
+
+      if (encoderCount >= 30)
       {
-        current = systemState::HUM_ISSUE;
+        maxTemperature = 30;
+        encoder.setCount(30);
       }
-      else if (current == systemState::HUM_ISSUE)
+      else if (encoderCount <= minTemperature + 1)
       {
-        current = systemState::TEMP_ISSUE;
+        maxTemperature = minTemperature + 1;
+        encoder.setCount(maxTemperature);
       }
-      else if (current == systemState::TEMP_ISSUE)
-      {
-        current = systemState::MINHUMIDITY;
+
+      maxTemperature = encoder.getCount();
+      if (millis() - lastButtonSerialLog > 250) {
+        Serial.println("[Encoder] New max: " + String(maxTemperature));
+        lastButtonSerialLog = millis();
       }
-      else if (current == systemState::MINHUMIDITY)
+      
+    }
+  }
+  else
+  {
+    if (minTemperature != encoderCount)
+    {
+
+      if (encoderCount >= maxTemperature - 1)
       {
-        minHumidity = minHumEncoder.getCount();
-        minHumEncoder.setCount(minHumidity);
-        Serial.println("Minimum Humidity set to: " + String(minHumidity) + "%");
-        current = systemState::MAXHUMIDITY;
+        minTemperature = maxTemperature - 1;
+        encoder.setCount(minTemperature);
       }
-      else if (current == systemState::MAXHUMIDITY)
+      else if (encoderCount <= 5)
       {
-        maxHum = maxHumEncoder.getCount();
-        maxHumEncoder.setCount(maxHumidity);
-        Serial.println("Maximum Humidity set to: " + String(maxHumidity) + "%");
-        current = State::MINTEMPERATURE;
+        minTemperature = 5;
+        encoder.setCount(minTemperature);
       }
-      else if (current == State::MINTEMPERATURE)
-      {
-        minTemperature = minTempEncoder.getCount();
-        minTempEncoder.setCount(minTemperature);
-        Serial.println("Minimum Temperature set to: " + String(minTemperature) + "\370C");
-        current = systemState::MAXTEMPERATURE;
-      }
-      else if (current == systemState::MAXTEMPERATURE)
-      {
-        maxTemperature = maxTempEncoder.getCount();
-        maxTempEncoder.setCount(maxTemperature);
-        Serial.println("Maximum Temperature set to: " + String(maxTemperature) + "\370C");
-        current = systemState::TEMP_ISSUE;
+
+      minTemperature = encoder.getCount();
+            if (millis() - lastButtonSerialLog > 250) {
+        Serial.println("[Encoder] New min: " + String(minTemperature));
+        lastButtonSerialLog = millis();
       }
     }
   }
@@ -552,10 +565,22 @@ void setup(void)
   pinMode(PIN_RED, OUTPUT);
   pinMode(PIN_GREEN, OUTPUT);
   pinMode(PIN_BLUE, OUTPUT);
+  pinMode(SWITCH_PIN, INPUT);
   SD.begin(CS_PIN);
   dht.begin();
   screen = new tftScreen(&tft);
-  lastChange = millis();
+  
+  // Encoder Set up 
+  ESP32Encoder::useInternalWeakPullResistors = UP;
+  encoder.attachHalfQuad(ROTARY_A, ROTARY_B);
+  isAdjustingMax = digitalRead(SWITCH_PIN);
+  if (isAdjustingMax) {
+    encoder.setCount(maxTemperature);
+  } else {
+    encoder.setCount(minTemperature);
+  }
+  lastButtonSerialLog = millis();
+  
 
   // Feature A
   testLED();
@@ -626,6 +651,9 @@ void loop()
 
   lightLED();
 
+  // Feature D and E
+  checkSwitch();
+  checkButton();
   // Feature H
   screen->updateTft(temperature, humidity);
 }
