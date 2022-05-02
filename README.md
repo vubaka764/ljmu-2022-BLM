@@ -1,5 +1,9 @@
 # ljmu-2022-BLM
 
+### Instructions
+Use the switch on rotary encoder to switch between adjusting min and max temperature.
+Rotate to increase and decrease the value.
+
 ### Neccessary libraries:
 
 #### TFT eSPI
@@ -31,3 +35,7 @@ https://github.com/adafruit/DHT-sensor-library?utm_source=platformio&utm_medium=
   RED = 0
   GREEN = 22
   BLUE = 21
+#### --- ROTARY ENCODER ---
+  ROTARY_A = 14
+  ROTARY_B = 12
+  SWITCH_PIN = 27
