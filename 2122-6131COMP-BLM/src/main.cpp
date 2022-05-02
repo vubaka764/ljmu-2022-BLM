@@ -44,14 +44,17 @@ const int DHT_PIN = 16;
 const int PIN_RED = 0;
 const int PIN_GREEN = 22;
 const int PIN_BLUE = 21;
+const int ROTARY_A = 16;
+const int ROTARY_B = 17;
 
 // Variables
 float temperature;
 float humidity;
 float minTemperature = 21.0;
 float maxTemperature = 25.0;
-float minHumidity = 20.0;
-float maxHumidity = 50.0;
+float minHumidity = 30.0;
+float maxHumidity = 60.0;
+
 
 // Config
 const char *SSID = "";
@@ -67,6 +70,10 @@ int lastTransmission = 0;
 String serverTime;
 
 DHT dht(DHT_PIN, DHT11);
+Encoder minHumEncoder(ROTARY_A, ROTARY_B);
+Encoder maxHumEncoder(ROTARY_A, ROTARY_B);
+Encoder minTempEncoder(ROTARY_A, ROTARY_B);
+Encoder maxTempEncoder(ROTARY_A, ROTARY_B);
 
 enum SystemState
 {
@@ -74,6 +81,10 @@ enum SystemState
   HUM_ISSUE,
   BOTH_ISSUE,
   SYSTEM_OK,
+  MINHUMIDITY,
+  MAXHUMIDITY,
+  MINTEMPERATURE,
+  MAXTEMPERATURE,
 };
 
 SystemState systemState = SYSTEM_OK;
@@ -166,6 +177,59 @@ void logSerial(void *parameters)
     Serial.println("Temperature: " + String(temperature, 0) + tempRange + " Humidity: " + String(humidity, 0) + humRange);
 
     vTaskDelay(5000 / portTICK_PERIOD_MS);
+  }
+}
+
+// ***** FEATURE D AND E *****
+int lastState;
+void checkButton()
+{
+  if (digitalRead(SWITCH) != systemState)
+  {
+    lastState = digitalRead(SWITCH);
+    if (lastState == BOTH_ISSUE)
+    {
+      if (current == systemState::BOTH_ISSUE)
+      {
+        current = systemState::HUM_ISSUE;
+      }
+      else if (current == systemState::HUM_ISSUE)
+      {
+        current = systemState::TEMP_ISSUE;
+      }
+      else if (current == systemState::TEMP_ISSUE)
+      {
+        current = systemState::MINHUMIDITY;
+      }
+      else if (current == systemState::MINHUMIDITY)
+      {
+        minHumidity = minHumEncoder.getCount();
+        minHumEncoder.setCount(minHumidity);
+        Serial.println("Minimum Humidity set to: " + String(minHumidity) + "%");
+        current = systemState::MAXHUMIDITY;
+      }
+      else if (current == systemState::MAXHUMIDITY)
+      {
+        maxHum = maxHumEncoder.getCount();
+        maxHumEncoder.setCount(maxHumidity);
+        Serial.println("Maximum Humidity set to: " + String(maxHumidity) + "%");
+        current = State::MINTEMPERATURE;
+      }
+      else if (current == State::MINTEMPERATURE)
+      {
+        minTemperature = minTempEncoder.getCount();
+        minTempEncoder.setCount(minTemperature);
+        Serial.println("Minimum Temperature set to: " + String(minTemperature) + "\370C");
+        current = systemState::MAXTEMPERATURE;
+      }
+      else if (current == systemState::MAXTEMPERATURE)
+      {
+        maxTemperature = maxTempEncoder.getCount();
+        maxTempEncoder.setCount(maxTemperature);
+        Serial.println("Maximum Temperature set to: " + String(maxTemperature) + "\370C");
+        current = systemState::TEMP_ISSUE;
+      }
+    }
   }
 }
 
