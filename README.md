@@ -2,7 +2,7 @@
 
 ### Instructions
 Use the switch on rotary encoder to switch between adjusting min and max temperature.
-Rotate to increase and decrease the value.
+Rotate to increase and decrease the value. Button press toggles between adjusting temperature and humidity.
 
 ### Neccessary libraries:
 
@@ -39,3 +39,4 @@ https://github.com/adafruit/DHT-sensor-library?utm_source=platformio&utm_medium=
   ROTARY_A = 14
   ROTARY_B = 12
   SWITCH_PIN = 27
+  BTN_PIN = 13
