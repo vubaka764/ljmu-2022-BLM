@@ -50,15 +50,20 @@ const int ROTARY_B = 17;
 // Variables
 float temperature;
 float humidity;
-float minTemperature = 21.0;
+float minTemperature = 20.0;
 float maxTemperature = 25.0;
+<<<<<<< HEAD
 float minHumidity = 30.0;
 float maxHumidity = 60.0;
 
+=======
+float minHumidity = 40.0;
+float maxHumidity = 60.0;
+>>>>>>> e7da3f7b1aacec4bc0dda1b52312bd1ee38c1308
 
 // Config
-const char *SSID = "";
-const char *PASS = "";
+const char *SSID = "VodaVice";
+const char *PASS = "Dj0ab000";
 String groupname = "BLM";
 
 // Vectors
@@ -68,6 +73,10 @@ std::vector<float> humidityVector;
 // Server values
 int lastTransmission = 0;
 String serverTime;
+
+// Blinking
+long lastChange;
+bool blinkRed = true;
 
 DHT dht(DHT_PIN, DHT11);
 Encoder minHumEncoder(ROTARY_A, ROTARY_B);
@@ -89,6 +98,53 @@ enum SystemState
 
 SystemState systemState = SYSTEM_OK;
 
+// ***** FEATURE B *****
+
+// Print change from/to green on serial port
+void serialPrintChange(SystemState previous)
+{
+  if (previous != systemState)
+  {
+    // Changed to green
+    if (systemState == SYSTEM_OK)
+    {
+      switch (previous)
+      {
+      case TEMP_ISSUE:
+        Serial.println("** System State changed to Green : Caused by temperature **");
+        break;
+      case HUM_ISSUE:
+        Serial.println("** System State changed to Green : Caused by humidity **");
+        break;
+      case BOTH_ISSUE:
+        Serial.println("** System State changed to Green : Caused by temperature and humidity **");
+        break;
+      case SYSTEM_OK:
+        break;
+      }
+    }
+
+    // Changed from green
+    if (previous == SYSTEM_OK)
+    {
+      switch (systemState)
+      {
+      case TEMP_ISSUE:
+        Serial.println("** System State changed from Green to Red : Caused by temperature **");
+        break;
+      case HUM_ISSUE:
+        Serial.println("** System State changed from Green to Blue : Caused by humidity **");
+        break;
+      case BOTH_ISSUE:
+        Serial.println("** System State changed from Green to Red/Blue : Caused by temperature and humidity **");
+        break;
+      case SYSTEM_OK:
+        break;
+      }
+    }
+  }
+}
+
 // Update System Status
 void updateSystemStatus()
 {
@@ -106,6 +162,7 @@ void updateSystemStatus()
   }
 
   // Update systemState based on the issues
+  SystemState previousSystemState = systemState;
   if (!tempIssue && !humIssue)
   {
     systemState = SYSTEM_OK;
@@ -122,32 +179,66 @@ void updateSystemStatus()
   {
     systemState = BOTH_ISSUE;
   }
+
+  serialPrintChange(previousSystemState);
 }
 
-// ***** FEATURE B *****
+void lightGreen()
+{
+  digitalWrite(PIN_RED, LOW);
+  digitalWrite(PIN_GREEN, HIGH);
+  digitalWrite(PIN_BLUE, LOW);
+}
+
+void lightBlue()
+{
+  digitalWrite(PIN_RED, LOW);
+  digitalWrite(PIN_GREEN, LOW);
+  digitalWrite(PIN_BLUE, HIGH);
+}
+
+void lightRed()
+{
+  digitalWrite(PIN_RED, HIGH);
+  digitalWrite(PIN_GREEN, LOW);
+  digitalWrite(PIN_BLUE, LOW);
+}
+
+void noColor()
+{
+  digitalWrite(PIN_RED, LOW);
+  digitalWrite(PIN_GREEN, LOW);
+  digitalWrite(PIN_BLUE, LOW);
+}
+
 void lightLED()
 {
   switch (systemState)
   {
   case SYSTEM_OK:
-    digitalWrite(PIN_RED, LOW);
-    digitalWrite(PIN_GREEN, HIGH);
-    digitalWrite(PIN_BLUE, LOW);
+    lightGreen();
     break;
   case TEMP_ISSUE:
-    digitalWrite(PIN_RED, HIGH);
-    digitalWrite(PIN_GREEN, LOW);
-    digitalWrite(PIN_BLUE, LOW);
+    lightRed();
     break;
   case HUM_ISSUE:
-    digitalWrite(PIN_RED, LOW);
-    digitalWrite(PIN_GREEN, LOW);
-    digitalWrite(PIN_BLUE, HIGH);
+    lightBlue();
     break;
   case BOTH_ISSUE:
-    digitalWrite(PIN_RED, LOW);
-    digitalWrite(PIN_GREEN, LOW);
-    digitalWrite(PIN_BLUE, LOW);
+
+    if (millis() - lastChange > 500)
+    {
+      lastChange = millis();
+      blinkRed = !blinkRed;
+    }
+    if (blinkRed)
+    {
+      lightRed();
+    }
+    else
+    {
+      lightBlue();
+    }
     break;
   }
 }
@@ -307,8 +398,6 @@ void writeValues(void *parameters)
   {
     vTaskDelay(120000 / portTICK_PERIOD_MS);
 
-    SD.begin(CS_PIN);
-
     serverTime.replace(",", "");
     serverTime.replace(" ", "_");
     serverTime.replace(":", "_");
@@ -333,44 +422,39 @@ void writeValues(void *parameters)
     temperatureVector.clear();
     humidityVector.clear();
     lastTransmission = 0;
-
-    SD.end();
   }
 }
 
 // ***** FEATURE A *****
-void testLED(void)
+void testLED()
 {
   Serial.println("LED test.");
-  // color RED
 
+  // color RED
   Serial.println("Lighting LED red.");
-  digitalWrite(PIN_RED, HIGH);
-  digitalWrite(PIN_GREEN, LOW);
-  digitalWrite(PIN_BLUE, LOW);
+  lightRed();
 
   delay(2000); // keep the color 2 seconds
 
   // color GREEN
   Serial.println("Lighting LED green.");
-  digitalWrite(PIN_RED, LOW);
-  digitalWrite(PIN_GREEN, HIGH);
-  digitalWrite(PIN_BLUE, LOW);
+  lightGreen();
 
   delay(2000); // keep the color 2 seconds
 
   // color BLUE
   Serial.println("Lighting LED blue.");
-  digitalWrite(PIN_RED, LOW);
-  digitalWrite(PIN_GREEN, LOW);
-  digitalWrite(PIN_BLUE, HIGH);
+  lightBlue();
 
   delay(2000); // keep the color 2 seconds
+
+  // Reset color
+  noColor();
 
   Serial.println("LED test finished.");
 }
 
-void testDHT(void)
+void testDHT()
 {
   Serial.println("DHT test starting...");
 
@@ -381,49 +465,64 @@ void testDHT(void)
   // Read temperature as Fahrenheit (isFahrenheit = true)
   float f = dht.readTemperature(true);
 
-  // Check if any reads failed and if it any do the system shutsdown
+  // Check if any reads failed and if any do the system will shutdown
   if (isnan(humidity) || isnan(temperature) || isnan(f))
   {
     Serial.println("Failed to read from DHT sensor! Shutting system down...");
     void shutdown();
   }
+
   Serial.println("DHT test successful.");
 }
 
-void sdCardTest(void)
+bool sdCardTest()
 {
-  SD.begin(CS_PIN);
-
-  Serial.println("SD test");
+  Serial.println("Beginning SD test...");
 
   // Write test file
-  String testFileName = "test.txt";
+  String testFileName = "/test.txt";
+  String testFileString = "SD Card Test";
+
+  // if (SD.)
+  // {
+  //   Serial.println("Error writing the file: SD Card Test Failed");
+  //   return false;
+  // }
 
   File file = SD.open(testFileName, FILE_WRITE);
-  file.println("SD Card Test");
+
+  if (!file)
+  {
+    Serial.println("SD Test Failed. Feature G Disabled.");
+    SD.end();
+    return false;
+  }
+
+  file.println(testFileString);
+  Serial.println("Writing to file...");
   file.close();
-  Serial.println("Wrote to file.");
 
-  // TODO: ** Read Data ** if no value then fail
-  
-  // File file = SD.open(testFileName);
-  // while (file.available())
-  // {
-  //   String readLine = file.readStringUntil('\r');
-  //   readLine.trim();
-  //   if (readLine.length() > 0)
-  //   {
-  //     Serial.println(readLine);
-  //   }
-  // }
-  // file.close();
+  // Read Data -- if no value then fail
 
-  // Serial.println("System Fail");
-  // void shutdown();
-
-  // TODO: ** delete file after test is done **
-
-  SD.end();
+  file = SD.open(testFileName);
+  String readLine = file.readStringUntil('\r');
+  Serial.println("Reading file...");
+  readLine.trim();
+  if (readLine.equals(testFileString))
+  {
+    // Serial.println(readLine);
+    Serial.println("SD Test Passed.");
+    file.close();
+    SD.remove(testFileName);
+    return true;
+  }
+  else
+  {
+    Serial.println("SD Test Failed. Feature G Disabled.");
+    file.close();
+    SD.remove(testFileName);
+    return false;
+  }
 }
 
 void connectToWiFi(void)
@@ -453,14 +552,19 @@ void setup(void)
   pinMode(PIN_RED, OUTPUT);
   pinMode(PIN_GREEN, OUTPUT);
   pinMode(PIN_BLUE, OUTPUT);
+  SD.begin(CS_PIN);
   dht.begin();
   screen = new tftScreen(&tft);
+  lastChange = millis();
 
   // Feature A
   testLED();
   connectToWiFi();
   testDHT();
-  Serial.println("System passed all checks.");
+  bool isSdCardConnected = sdCardTest();
+  Serial.println("System passed all neccessary checks.");
+  // Determine system status before startup
+  updateSystemStatus();
 
   // Feature C
   xTaskCreate(
@@ -488,14 +592,18 @@ void setup(void)
       3,
       NULL);
 
-  // Feature G
-  xTaskCreate(
-      writeValues,
-      "Saving Values",
-      6000,
-      NULL,
-      4,
-      NULL);
+  // If system passed sd card test
+  if (isSdCardConnected)
+  {
+    // Feature G
+    xTaskCreate(
+        writeValues,
+        "Saving Values",
+        6000,
+        NULL,
+        4,
+        NULL);
+  }
 }
 
 // -------------------------------------------------------------------------
@@ -504,11 +612,20 @@ void setup(void)
 
 void loop()
 {
-  temperature = dht.readTemperature();
-  humidity = dht.readHumidity();
-  updateSystemStatus();
-  lightLED();
-  //Feature H
-  screen->updateTft(temperature, humidity);
+  // Feature B
 
+  float newTemperature = dht.readTemperature();
+  float newHumidity = dht.readHumidity();
+  // Check if the readings are valid
+  if (!isnan(newTemperature) || !isnan(newHumidity))
+  {
+    temperature = newTemperature;
+    humidity = newHumidity;
+  }
+  updateSystemStatus();
+
+  lightLED();
+
+  // Feature H
+  screen->updateTft(temperature, humidity);
 }
