@@ -49,6 +49,7 @@ const int PIN_BLUE = 21;
 const int ROTARY_A = 14;
 const int ROTARY_B = 12;
 const int SWITCH_PIN = 27;
+const int TEMPHUM_PIM = 13;
 
 // Variables
 float temperature;
@@ -58,6 +59,8 @@ float maxTemperature = 25.0;
 float minHumidity = 40.0;
 float maxHumidity = 60.0;
 bool isAdjustingMax;
+bool isAdjustingTemperature = true;
+long lastButtonPress;
 
 // Config
 const char *SSID = "";
@@ -271,23 +274,68 @@ void checkSwitch()
     if (digitalRead(SWITCH_PIN))
     {
       isAdjustingMax = true;
-      encoder.setCount(maxTemperature);
-      Serial.println("[Switch] Switched to adjusting max temperature");
+      if (isAdjustingTemperature)
+      {
+        encoder.setCount(maxTemperature);
+      }
+      else
+      {
+        encoder.setCount(maxHumidity);
+      }
+
+      Serial.println("[Switch] Switched to adjusting max value");
     }
     else
     {
       isAdjustingMax = false;
-      encoder.setCount(minTemperature);
-      Serial.println("[Switch] Switched to adjusting min temperature");
+      if (isAdjustingTemperature)
+      {
+        encoder.setCount(minTemperature);
+      }
+      else
+      {
+        encoder.setCount(minHumidity);
+      }
+      Serial.println("[Switch] Switched to adjusting min value");
+    }
+  }
+}
+
+void checkTempHumButton()
+{
+  if (!digitalRead(TEMPHUM_PIM))
+  {
+
+    if (millis() - lastButtonPress > 1000)
+    {
+      lastButtonPress = millis();
+      isAdjustingTemperature = !isAdjustingTemperature;
+      if (isAdjustingTemperature)
+      {
+        Serial.println("[Button Press] Switched to adjusting temperature");
+        if (isAdjustingMax) {
+          encoder.setCount(maxTemperature);
+        } else {
+          encoder.setCount(minTemperature);
+        }
+      }
+      else
+      {
+        Serial.println("[Button Press] Switched to adjusting humidity");
+                if (isAdjustingMax) {
+          encoder.setCount(maxHumidity);
+        } else {
+          encoder.setCount(minHumidity);
+        }
+      }
     }
   }
 }
 
 long lastButtonSerialLog;
 
-void checkButton()
+void updateTemperature(float encoderCount)
 {
-  float encoderCount = encoder.getCount();
   if (isAdjustingMax)
   {
     if (maxTemperature != encoderCount)
@@ -305,11 +353,11 @@ void checkButton()
       }
 
       maxTemperature = encoder.getCount();
-      if (millis() - lastButtonSerialLog > 250) {
-        Serial.println("[Encoder] New max: " + String(maxTemperature));
+      if (millis() - lastButtonSerialLog > 250)
+      {
+        Serial.println("[Encoder] New max temperature: " + String(maxTemperature));
         lastButtonSerialLog = millis();
       }
-      
     }
   }
   else
@@ -329,11 +377,74 @@ void checkButton()
       }
 
       minTemperature = encoder.getCount();
-            if (millis() - lastButtonSerialLog > 250) {
-        Serial.println("[Encoder] New min: " + String(minTemperature));
+      if (millis() - lastButtonSerialLog > 250)
+      {
+        Serial.println("[Encoder] New min temperature: " + String(minTemperature));
         lastButtonSerialLog = millis();
       }
     }
+  }
+}
+
+void updateHumidity(float encoderCount)
+{
+  if (isAdjustingMax)
+  {
+    if (maxHumidity != encoderCount)
+    {
+
+      if (encoderCount >= 100)
+      {
+        maxHumidity = 100;
+        encoder.setCount(100);
+      }
+      else if (encoderCount <= minHumidity + 1)
+      {
+        maxHumidity = minHumidity + 1;
+        encoder.setCount(maxHumidity);
+      }
+
+      maxHumidity = encoder.getCount();
+      if (millis() - lastButtonSerialLog > 250)
+      {
+        Serial.println("[Encoder] New max humidity: " + String(maxHumidity));
+        lastButtonSerialLog = millis();
+      }
+    }
+  }
+  else
+  {
+    if (minHumidity != encoderCount)
+    {
+
+      if (encoderCount >= maxHumidity - 1)
+      {
+        minHumidity = maxHumidity - 1;
+        encoder.setCount(minHumidity);
+      }
+      else if (encoderCount <= 0)
+      {
+        minHumidity = 0;
+        encoder.setCount(minHumidity);
+      }
+
+      minHumidity = encoder.getCount();
+      if (millis() - lastButtonSerialLog > 250)
+      {
+        Serial.println("[Encoder] New min humidity: " + String(minHumidity));
+        lastButtonSerialLog = millis();
+      }
+    }
+  }
+}
+
+void checkButton()
+{
+  float encoderCount = encoder.getCount();
+  if (isAdjustingTemperature) {
+    updateTemperature(encoderCount);
+  } else {
+    updateHumidity(encoderCount);
   }
 }
 
@@ -566,21 +677,24 @@ void setup(void)
   pinMode(PIN_GREEN, OUTPUT);
   pinMode(PIN_BLUE, OUTPUT);
   pinMode(SWITCH_PIN, INPUT);
+  pinMode(TEMPHUM_PIM, INPUT);
   SD.begin(CS_PIN);
   dht.begin();
   screen = new tftScreen(&tft);
-  
-  // Encoder Set up 
+
+  // Encoder Set up
   ESP32Encoder::useInternalWeakPullResistors = UP;
   encoder.attachHalfQuad(ROTARY_A, ROTARY_B);
   isAdjustingMax = digitalRead(SWITCH_PIN);
-  if (isAdjustingMax) {
+  if (isAdjustingMax)
+  {
     encoder.setCount(maxTemperature);
-  } else {
+  }
+  else
+  {
     encoder.setCount(minTemperature);
   }
   lastButtonSerialLog = millis();
-  
 
   // Feature A
   testLED();
@@ -654,6 +768,8 @@ void loop()
   // Feature D and E
   checkSwitch();
   checkButton();
+  checkTempHumButton();
+
   // Feature H
   screen->updateTft(temperature, humidity);
 }
